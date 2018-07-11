@@ -1,0 +1,110 @@
+#include("top.vm")
+<a href="inputScheduleJob.shtml" class="btn btn-success" role="button">添加任务</a>
+<table class="table table-bordered table-margin-top">
+    <tr>
+        <td>任务标识</td>
+        <td>任务状态</td>
+        <td>时间表达式</td>
+        <td>是否启用</td>
+        <td>是否异步</td>
+        <td>任务执行url</td>
+        <td>上次执行时间</td>
+        <td>上次执行状态</td>
+        <td>失败原因</td>
+        <td>操作</td>
+    </tr>
+    #foreach($item in $scheduleJobVoList)
+        <tr>
+        	<td>
+        		#set($typeName = "增量更新")
+        		#if ($!{item.functionalType} == '1')
+	             	 #set($typeName = "增量更新")
+	            #else
+	           		 #set($typeName = "推送")
+	            #end
+	            $!{item.companyCode}_$!{item.functionalName}_$typeName
+        	</td>
+            #if ($!{item.runStatus}=="PAUSED")
+                <td class="status-color">$!{item.runStatus}</td>
+            #else
+                <td>$!{item.runStatus}</td>
+            #end
+            <td>$!{item.cronExpression}</td>
+            <td>
+            	#if ($!{item.isActived}=="1")
+	             	 启用
+	            #else
+	           		   禁用
+	            #end
+            </td>
+            <td>
+	            #if ($!{item.isSync})
+	             	   异步
+	            #else
+	           		   同步
+	            #end
+            </td>
+            <td>$!{item.taskUrl}</td>
+            <td>$!dateTool.format('yyyy-MM-dd HH:mm:ss', $!item.lastExcutionTime)</td>
+            <td>
+	            #if ($!{item.lastExcutionStatus})
+	             	   成功
+	            #else
+	           		   失败
+	            #end
+            </td>
+             <td>$!{item.lastExcutionResult}</td>
+            <td>
+                #if ($!{item.isActived}=="1")   
+	                <a class="btn btn-danger" role="button"
+	                   href="changScheduleJobActive.shtml?scheduleJobId=$!{item.scheduleJobId}&isActived=0"><i class="fa fa-reply" aria-hidden="true"></i>禁用</a>
+                #else  
+                    <a class="btn btn-danger" role="button"
+	                   href="changScheduleJobActive.shtml?scheduleJobId=$!{item.scheduleJobId}&isActived=1"><i class="fa fa-reply" aria-hidden="true"></i>启用</a>
+                #end
+                   
+                 <!-- <a class="btn btn-danger" role="button"
+                   href="runOnceScheduleJob.shtml?scheduleJobId=$!{item.scheduleJobId}"><i class="fa fa-play" aria-hidden="true"></i>运行一次</a> -->
+                   
+               <!--  <a class="btn btn-danger" role="button"
+                   href="pauseScheduleJob.shtml?scheduleJobId=$!{item.scheduleJobId}"><i class="fa fa-pause-circle-o" aria-hidden="true"></i>暂停</a>
+                <a class="btn btn-danger" role="button"
+                   href="resumeScheduleJob.shtml?scheduleJobId=$!{item.scheduleJobId}"><i class="fa fa-reply" aria-hidden="true"></i>恢复</a>
+                 -->
+                    
+                <a class="btn btn-danger" role="button"
+                   href="inputScheduleJob.shtml?scheduleJobId=$!{item.scheduleJobId}"><i class="fa fa-pencil" aria-hidden="true"></i>修改</a>
+                <a class="btn btn-danger" role="button"
+                   href="deleteScheduleJob.shtml?scheduleJobId=$!{item.scheduleJobId}"><i class="fa fa-trash" aria-hidden="true"></i>删除</a>
+            </td>
+        </tr>
+    #end
+</table>
+<p class="lead">运行中的任务</p>
+<table class="table table-bordered">
+    <tr>
+        <td>任务标识</td>
+        <td>任务状态</td>
+        <td>时间表达式</td>
+        <td>任务执行url</td>
+        <td>任务描述</td>
+    </tr>
+    #foreach($item in $executingJobList)
+        <tr>
+            <td>
+        		#set($typeName = "增量更新")
+        		#if ($!{item.functionalType} == '1')
+	             	 #set($typeName = "增量更新")
+	            #else
+	           		 #set($typeName = "推送")
+	            #end
+	            $!{item.companyCode}_$!{item.functionalName}_$typeName
+        	</td>
+            <td>$!{item.runStatus}</td>
+            <td>$!{item.cronExpression}</td>
+            <td>$!{item.taskUrl}</td>
+            <td>$!{item.description}</td>
+        </tr>
+    #end
+</table>
+#include("foot.vm")
