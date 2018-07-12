@@ -2,6 +2,9 @@ package com.jacliu.test.vo;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 /**
  * 返回给客户端的类
  *
@@ -68,5 +71,10 @@ public class ResultModel<T> implements Serializable {
 
 	public void setBody(T body) {
 		this.body = body;
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this, ToStringStyle.JSON_STYLE);
 	}
 }

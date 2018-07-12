@@ -58,11 +58,12 @@ public class ScheduleJobController {
 	@RequestMapping(value = "deleteScheduleJob", method = RequestMethod.GET)
 	public String deleteScheduleJob(Long scheduleJobId) {
 		try {
-			scheduleJobService.deleteScheduleJob(scheduleJobId);
+			// scheduleJobService.deleteScheduleJob(scheduleJobId);
+			scheduleJobService.delete(scheduleJobId);
 		} catch (Exception e) {
 			LOG.error("deleteScheduleJob:: " + e.getMessage());
 		}
-		// scheduleJobService.delete(scheduleJobId);
+
 		return "redirect:scheduleJobs.shtml";
 	}
 

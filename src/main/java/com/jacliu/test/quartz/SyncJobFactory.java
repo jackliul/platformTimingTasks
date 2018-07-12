@@ -34,9 +34,6 @@ public class SyncJobFactory extends QuartzJobBean {
 	@Override
 	protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
 
-		System.out.println("amqpTemplate " + amqpTemplate);
-		LOG.info("发送消息：{}", "xxxxxxxxxxdfsdfdsfdsfsdfsdfdsf");
-
 		JobDataMap mergedJobDataMap = context.getMergedJobDataMap();
 		ScheduleJob scheduleJob = (ScheduleJob) mergedJobDataMap.get(ScheduleJobVo.JOB_PARAM_KEY);
 
@@ -45,7 +42,6 @@ public class SyncJobFactory extends QuartzJobBean {
 		messageProperties.setContentType("application/json");
 		Message message = new Message(scheduleJobStr.getBytes(), messageProperties);
 
-		System.out.println(" messages ,,, " + scheduleJobStr);
 		LOG.info("发送消息 messages ,,, ：{}", scheduleJobStr);
 		amqpTemplate.convertAndSend("timingTasks_X", "timingTasks_R", message);
 	}

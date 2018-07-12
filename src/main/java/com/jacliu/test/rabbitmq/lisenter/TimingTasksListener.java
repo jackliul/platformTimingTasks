@@ -41,7 +41,6 @@ public class TimingTasksListener implements ChannelAwareMessageListener {
 				return;
 			}
 
-			System.out.println("consumer received message: " + data);
 			LOG.info("consumer received message: {} ", data);
 			scheduleJob = JSON.parseObject(data, ScheduleJob.class);
 

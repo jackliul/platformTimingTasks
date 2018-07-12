@@ -23,7 +23,7 @@
 
     <!-- root logger -->
     <root>
-        <level value="warn"/>
+        <level value="info"/>
         <appender-ref ref="DEFAULT-APPENDER"/>
         <appender-ref ref="STDOUT-APPENDER"/>
     </root>
