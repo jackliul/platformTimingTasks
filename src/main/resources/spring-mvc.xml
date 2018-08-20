@@ -8,10 +8,14 @@
         http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
     <!-- 开启controller注解支持 -->
+    <!-- win上的写法。 -->
 	<context:component-scan base-package="com.jacliu.test.controller.*" use-default-filters="false">
 		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
 	</context:component-scan>
-    
+   <!-- linux上的写法 -->
+   <context:component-scan base-package="com.jacliu.test.*" use-default-filters="false">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
     
     <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
         <property name="order" value="1"/>

@@ -1,10 +1,10 @@
 package com.jacliu.test.rabbitmq.lisenter;
 
 import java.io.IOException;
-import java.util.Date;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -55,10 +55,16 @@ public class TimingTasksListener implements ChannelAwareMessageListener {
 
 	}
 
+	// 4.3版本不设置超时的话，一旦服务器没有响应，等待时间N久(>24小时)。
 	private void executeRemoteJob(ScheduleJob scheduleJob) {
 		String taskUrl = scheduleJob.getTaskUrl();
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		HttpGet httpGet = new HttpGet(taskUrl);
+		RequestConfig requestConfig = RequestConfig.custom()
+				.setConnectTimeout(60000)
+				.setConnectionRequestTimeout(9000)
+				.setSocketTimeout(60000).build(); // 设置请求和传输超时时间
+		httpGet.setConfig(requestConfig);
 		CloseableHttpResponse response = null;
 		try {
 			response = httpclient.execute(httpGet);
@@ -76,7 +82,7 @@ public class TimingTasksListener implements ChannelAwareMessageListener {
 	}
 
 	private void changeJobRes(ScheduleJob scheduleJob, Integer resultCode, String message) {
-		scheduleJob.setGmtModify(new Date());
+		// scheduleJob.setGmtModify(new Date()); // 最后修改时间不对
 		scheduleJob.setLastExcutionResult(message);
 		scheduleJob.setLastExcutionStatus(resultCode);
 		scheduleJobService.changeJobRes(scheduleJob);
