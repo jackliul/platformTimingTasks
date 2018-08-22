@@ -28,20 +28,19 @@
             <entry key="x-dead-letter-exchange" value="timingTasks_X"/>
             <entry key="x-dead-letter-routing-key" value="timingTasks_R"/>
             <entry key="x-message-ttl">
-				<value  type="java.lang.Long">60000</value>
+				<value  type="java.lang.Long">600</value>
 			</entry>
         </rabbit:queue-arguments>
 	</rabbit:queue>
 	
-	 <!-- spring amqp默认的是jackson 的一个插件,目的将生产者生产的数据转换为json存入消息队列，由于Gson的速度快于jackson,这里替换为Gson的一个实现 -->  
+	<!-- spring amqp默认的是jackson 的一个插件,目的将生产者生产的数据转换为json存入消息队列，由于Gson的速度快于jackson,这里替换为Gson的一个实现 -->  
     <bean id="jsonMessageConverter" class="com.jacliu.test.rabbitmq.core.Gson2JsonMessageConverter" />  
-<!-- 	<bean id="messageConverter" class="org.springframework.messaging.converter.MappingJackson2MessageConverter"/>  -->
 	<!-- 定义操作模板，还可用 message-converter属性指定消息转换器，此处不配置，spring会给我们使用默认的转换器把消息转换成message对象 -->
-	<rabbit:template id="amqpTemplate" connection-factory="connectionFactory" exchange="timingTasks_exchange"/>
+	<rabbit:template id="amqpTemplate" connection-factory="connectionFactory" exchange="timingTasks_X" routing-key="timingTasks_R"/>
 	
 	<!-- 队列消费者 -->
-	<bean id="TimingTasksListener" class="com.jacliu.test.rabbitmq.lisenter.TimingTasksListener"/>
-	<rabbit:listener-container connection-factory="connectionFactory"  acknowledge="auto" >
-		<rabbit:listener queues="timingTasks_Q" ref="TimingTasksListener" />
+	<bean id="timingTasksListener" class="com.jacliu.test.rabbitmq.lisenter.TimingTasksListener" />
+	<rabbit:listener-container connection-factory="connectionFactory"  acknowledge="manual" >
+		<rabbit:listener queues="timingTasks_Q" ref="timingTasksListener" />
 	</rabbit:listener-container>
 </beans>

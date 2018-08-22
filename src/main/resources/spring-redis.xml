@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+	<!-- blockWhenExhausted: 从Pool中获取Jedis对象，Pool资源耗尽后阻塞maxWaitMillis参数指定时间 -->
+	<!-- maxWaitMillis: 从Pool中获取Jedis对象超时时间 -->
+	<!-- 本地开发 -->
+	<bean id="develop_jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig"
+	      p:minIdle="${develop_redis.minIdle}"
+	      p:maxIdle="${develop_redis.maxIdle}"
+	      p:maxTotal="${develop_redis.maxTotal}"
+	      p:maxWaitMillis="${develop_redis.maxWaitMillis}"
+	      p:testOnBorrow="${develop_redis.testOnBorrow}"
+	      p:testOnReturn="${develop_redis.testOnReturn}"
+	      p:testWhileIdle="${develop_redis.testWhileIdle}"
+	      p:blockWhenExhausted="${develop_redis.blockWhenExhausted}" />
+	<bean id="develop_jedisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+	    <property name="usePool" value="${develop_redis.usePool}" />
+	    <property name="hostName" value="${develop_redis.hostName}" />
+	    <property name="port" value="${develop_redis.port}" />
+	    <property name="password" value="${develop_redis.password}" />
+	    <property name="timeout" value="${develop_redis.timeout}" />
+	    <property name="database" value="${develop_redis.dbIndex}"/>
+		<constructor-arg name="poolConfig" ref="develop_jedisPoolConfig" />
+	</bean>
+	<bean id="develop_redisTemplate" name="develop_redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+	     <property name="connectionFactory" ref="develop_jedisConnectionFactory" />
+	</bean>
+	
+	<bean id="intlink_test_jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig"
+	      p:minIdle="${intlink_test_redis.minIdle}"
+	      p:maxIdle="${intlink_test_redis.maxIdle}"
+	      p:maxTotal="${intlink_test_redis.maxTotal}"
+	      p:maxWaitMillis="${intlink_test_redis.maxWaitMillis}"
+	      p:testOnBorrow="${intlink_test_redis.testOnBorrow}"
+	      p:testOnReturn="${intlink_test_redis.testOnReturn}"
+	      p:testWhileIdle="${intlink_test_redis.testWhileIdle}"
+	      p:blockWhenExhausted="${intlink_test_redis.blockWhenExhausted}" />
+	<bean id="intlink_test_jedisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+	    <property name="usePool" value="${intlink_test_redis.usePool}" />
+	    <property name="hostName" value="${intlink_test_redis.hostName}" />
+	    <property name="port" value="${intlink_test_redis.port}" />
+	    <property name="password" value="${intlink_test_redis.password}" />
+	    <property name="timeout" value="${intlink_test_redis.timeout}" />
+	    <property name="database" value="${intlink_test_redis.dbIndex}"/>
+		<constructor-arg name="poolConfig" ref="intlink_test_jedisPoolConfig" />
+	</bean>
+	<bean id="intlink_test_redisTemplate" name="intlink_test_redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+	     <property name="connectionFactory" ref="intlink_test_jedisConnectionFactory" />
+	</bean>
+	
+	<bean id="intlink_jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig"
+	      p:minIdle="${intlink_redis.minIdle}"
+	      p:maxIdle="${intlink_redis.maxIdle}"
+	      p:maxTotal="${intlink_redis.maxTotal}"
+	      p:maxWaitMillis="${intlink_redis.maxWaitMillis}"
+	      p:testOnBorrow="${intlink_redis.testOnBorrow}"
+	      p:testOnReturn="${intlink_redis.testOnReturn}"
+	      p:testWhileIdle="${intlink_redis.testWhileIdle}"
+	      p:blockWhenExhausted="${intlink_redis.blockWhenExhausted}" />
+	<bean id="intlink_jedisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+	    <property name="usePool" value="${intlink_redis.usePool}" />
+	    <property name="hostName" value="${intlink_redis.hostName}" />
+	    <property name="port" value="${intlink_redis.port}" />
+	    <property name="password" value="${intlink_redis.password}" />
+	    <property name="timeout" value="${intlink_redis.timeout}" />
+	    <property name="database" value="${intlink_redis.dbIndex}"/>
+		<constructor-arg name="poolConfig" ref="intlink_jedisPoolConfig" />
+	</bean>
+	<bean id="intlink_redisTemplate" name="intlink_redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+	     <property name="connectionFactory" ref="intlink_jedisConnectionFactory" />
+	</bean>
+	
+	<bean id="fardar_jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig"
+	      p:minIdle="${fardar_redis.minIdle}"
+	      p:maxIdle="${fardar_redis.maxIdle}"
+	      p:maxTotal="${fardar_redis.maxTotal}"
+	      p:maxWaitMillis="${fardar_redis.maxWaitMillis}"
+	      p:testOnBorrow="${fardar_redis.testOnBorrow}"
+	      p:testOnReturn="${fardar_redis.testOnReturn}"
+	      p:testWhileIdle="${fardar_redis.testWhileIdle}"
+	      p:blockWhenExhausted="${fardar_redis.blockWhenExhausted}" />
+	<bean id="fardar_jedisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+	    <property name="usePool" value="${fardar_redis.usePool}" />
+	    <property name="hostName" value="${fardar_redis.hostName}" />
+	    <property name="port" value="${fardar_redis.port}" />
+	    <property name="password" value="${fardar_redis.password}" />
+	    <property name="timeout" value="${fardar_redis.timeout}" />
+	    <property name="database" value="${fardar_redis.dbIndex}"/>
+		<constructor-arg name="poolConfig" ref="fardar_jedisPoolConfig" />
+	</bean>
+	<bean id="fardar_redisTemplate" name="fardar_redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+	     <property name="connectionFactory" ref="fardar_jedisConnectionFactory" />
+	</bean>
+	
+</beans>

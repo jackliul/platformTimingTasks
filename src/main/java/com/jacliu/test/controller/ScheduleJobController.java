@@ -183,6 +183,7 @@ public class ScheduleJobController {
 	public String scheduleJobs(ScheduleJobVo scheduleJobVo, ModelMap modelMap) {
 		List<ScheduleJobVo> scheduleJobVoList;
 		try {
+			scheduleJobVo.setEnv(null);
 			scheduleJobVoList = scheduleJobService.queryList(scheduleJobVo);
 			modelMap.put("scheduleJobVoList", scheduleJobVoList);
 		} catch (Exception e) {

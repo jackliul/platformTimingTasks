@@ -16,6 +16,7 @@ import org.quartz.impl.matchers.GroupMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import com.dexcoder.commons.bean.BeanConverter;
 import com.dexcoder.dal.JdbcDao;
 import com.dexcoder.dal.build.Criteria;
 import com.jacliu.test.model.ScheduleJob;
+import com.jacliu.test.redis.service.RedisService;
 import com.jacliu.test.service.ScheduleJobService;
 import com.jacliu.test.utils.ScheduleUtils;
 import com.jacliu.test.vo.ScheduleJobVo;
@@ -38,6 +40,18 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 	/** 调度工厂Bean */
 	@Autowired
 	private Scheduler scheduler;
+
+	@Autowired()
+	@Qualifier("developOrTestRedisService")
+	private RedisService developOrTestRedisService;
+
+	@Autowired()
+	@Qualifier("intelinkTestRedisService")
+	private RedisService intelinkTestRedisService;
+
+	@Autowired()
+	@Qualifier("intelinkRedisService")
+	private RedisService intelinkRedisService;
 
 	/** 通用dao */
 	@Autowired
@@ -280,20 +294,67 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 	@Transactional(rollbackFor = Exception.class)
 	public void changeJobRes(ScheduleJob scheduleJob) {
 
+		String lastRealExcutionTime = getLastRealExcutionTime(scheduleJob);
+
 		StringBuilder sb = new StringBuilder();
 		sb.append("UPDATE SCHEDULE_JOB sjb ").append("SET sjb.last_excution_time = NOW(), ")
 				.append("sjb.last_excution_status = " + scheduleJob.getLastExcutionStatus() + ", ")
+				.append("sjb.last_real_excution_time = '" + lastRealExcutionTime + "', ")
+				.append("sjb.modified_user = '" + scheduleJob.getModifiedUser() + "', ")
 				.append("sjb.last_excution_result = '" + scheduleJob.getLastExcutionResult() + "' ").append("WHERE ")
 				.append("sjb.task_url = '" + scheduleJob.getTaskUrl() + "'");
 
+		// System.out.println("updateSql " + sb.toString());
 		LOG.info("updateSql :: {} ", sb.toString());
 		// 执行成功了则不必要再记错误日志了，【调用方没返回logCode】
-		if (scheduleJob.getLastExcutionStatus() != 0) {
+		// -100 手动加的是请求不了服务器时的状态码
+		if (scheduleJob.getLastExcutionStatus() != 0 && scheduleJob.getLastExcutionStatus() != -100) {
 			String logCode = scheduleJob.getLastExcutionResult().split("_")[1];
 			LOG.info("{} :: 更新 sql语句 :: {}", logCode, sb.toString());
+			System.out.println("logCode, " + logCode);
 		}
 
 		jdbcDao.updateForSql(sb.toString());
 	}
 
+	private String getLastRealExcutionTime(ScheduleJob scheduleJob) {
+		String hostName = getHostName(scheduleJob.getTaskUrl());
+		String interfaceName = getInterfaceName(scheduleJob.getTaskUrl());
+		String companyCode = scheduleJob.getCompanyCode();
+		// String key = "SESSION:" + companyCode + ":FETCHCLIENTELEDATA_UPDATAMARK";
+		String key = new StringBuilder().append("SESSION:").append(companyCode).append(":").append(interfaceName)
+				.append("_UPDATAMARK").toString();
+		String hashKey = new StringBuilder().append("SESSION:").append(interfaceName).append("_UPDATAMARK").toString();
+
+		String lastRealExcutionTime = "";
+		if ("192.168.8.33:8081".equals(hostName)) {
+			lastRealExcutionTime = developOrTestRedisService.hget(key, hashKey);
+		}
+		if ("demo.i-oms.cn".equals(hostName)) {
+			lastRealExcutionTime = intelinkTestRedisService.hget(key, hashKey);
+		}
+		if ("www.i-oms.cn".equals(hostName)) {
+			lastRealExcutionTime = intelinkRedisService.hget(key, hashKey);
+		}
+
+		return lastRealExcutionTime;
+	}
+
+	private String getInterfaceName(String taskUrl) {
+		String[] split = taskUrl.split("//");
+		String[] split2 = split[1].split("/");
+		String interfaceName = split2[2];
+		return interfaceName.toUpperCase();
+	}
+
+	private String getHostName(String taskUrl) {
+		// String taskUrl =
+		// "http://192.168.8.33:8081/oms-web/fetchClienteleData/1.0?companyNo=FWGJ";
+		String[] split = taskUrl.split("//");
+		// System.out.println(split[1]);
+		String[] split2 = split[1].split("/");
+		// System.out.println(split2[0]);
+		String hostName = split2[0];
+		return hostName;
+	}
 }

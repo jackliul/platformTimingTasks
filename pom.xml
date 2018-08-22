@@ -18,6 +18,9 @@
     <quartz.version>2.2.1</quartz.version>
     <aspectj.version>1.7.2</aspectj.version>
     <slf4j-log4j12.version>1.6.6</slf4j-log4j12.version>
+    <jedis.version>2.7.3</jedis.version>
+	<spring.data.redis.version>1.7.1.RELEASE</spring.data.redis.version>
+	<jackson.version>2.6.5</jackson.version>
   </properties>
 
   <dependencies>
@@ -54,7 +57,17 @@
 	    <artifactId>fastjson</artifactId>
 	    <version>1.2.47</version>
 	</dependency>
-
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-core</artifactId>
+		<version>${jackson.version}</version>
+	</dependency>
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-databind</artifactId>
+		<version>${jackson.version}</version>
+	</dependency>
+		
     <!-- https://mvnrepository.com/artifact/junit/junit -->
 	<dependency>
 	    <groupId>junit</groupId>
@@ -62,6 +75,15 @@
 	    <version>4.12</version>
 	    <scope>test</scope>
 	</dependency>
+
+	<!-- https://mvnrepository.com/artifact/org.springframework/spring-test -->
+	<dependency>
+	    <groupId>org.springframework</groupId>
+	    <artifactId>spring-test</artifactId>
+	    <version>${spring.version}</version>
+	    <scope>test</scope>
+	</dependency>
+
 
     <dependency>
 	    <groupId>org.springframework.amqp</groupId>
@@ -99,12 +121,31 @@
       <artifactId>spring-aspects</artifactId>
       <version>${spring.version}</version>
     </dependency>
+    
+    <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-aop</artifactId>
+         <version>${spring.version}</version>
+     </dependency>
+     
+     <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-context</artifactId>
+         <version>${spring.version}</version>
+     </dependency>
 
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-webmvc</artifactId>
       <version>${spring.version}</version>
     </dependency>
+
+	<!-- https://mvnrepository.com/artifact/aopalliance/aopalliance -->
+	<dependency>
+	    <groupId>aopalliance</groupId>
+	    <artifactId>aopalliance</artifactId>
+	    <version>1.0</version>
+	</dependency>
 
     <dependency>
       <groupId>org.aspectj</groupId>
@@ -143,6 +184,19 @@
       <version>4.5</version>
     </dependency>
 
+ 	<!-- redis start -->
+    <dependency>
+		<groupId>redis.clients</groupId>
+		<artifactId>jedis</artifactId>
+		<version>${jedis.version}</version>
+	 </dependency>
+	 <dependency>
+		<groupId>org.springframework.data</groupId>
+		<artifactId>spring-data-redis</artifactId>
+		<version>${spring.data.redis.version}</version>
+     </dependency>
+     <!-- redis end -->
+	     
   </dependencies>
 
   <build>

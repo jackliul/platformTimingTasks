@@ -19,6 +19,9 @@ public class ScheduleJob extends Pageable {
 	// 执行该任务的后台地址：如http://192.168.8.33:8081/oms-web/fetchClienteleData/1.0?companyNo=FDE
 	private String taskUrl;
 
+	// 环境
+	private String env;
+
 	// 公司编号
 	private String companyCode;
 
@@ -30,6 +33,9 @@ public class ScheduleJob extends Pageable {
 
 	// 该任务上次执行结果：【当上次执行成功时可以为Null，执行失败时必须填写】
 	private String lastExcutionResult;
+
+	// 上次执行时间
+	private String lastRealExcutionTime;
 
 	// 上次执行时间
 	private Date lastExcutionTime;
@@ -196,6 +202,14 @@ public class ScheduleJob extends Pageable {
 		this.gmtModify = gmtModify;
 	}
 
+	public String getLastRealExcutionTime() {
+		return lastRealExcutionTime;
+	}
+
+	public void setLastRealExcutionTime(String lastRealExcutionTime) {
+		this.lastRealExcutionTime = lastRealExcutionTime;
+	}
+
 	public String getJobName() {
 		return this.jobName;
 	}
@@ -238,6 +252,14 @@ public class ScheduleJob extends Pageable {
 
 	public void setIsSync(Boolean isSync) {
 		this.isSync = isSync;
+	}
+
+	public String getEnv() {
+		return env;
+	}
+
+	public void setEnv(String env) {
+		this.env = env;
 	}
 
 	@Override

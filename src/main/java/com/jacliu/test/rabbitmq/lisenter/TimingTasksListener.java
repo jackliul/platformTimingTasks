@@ -1,6 +1,7 @@
 package com.jacliu.test.rabbitmq.lisenter;
 
-import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -45,61 +46,62 @@ public class TimingTasksListener implements ChannelAwareMessageListener {
 			scheduleJob = JSON.parseObject(data, ScheduleJob.class);
 
 			executeRemoteJob(scheduleJob);
-
 			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
 		} catch (Exception e) {
 			LOG.error("发送时错误", e.getMessage());
-			e.printStackTrace();
-			throw new Exception();
+			if ("连接不上：".equals(e.getMessage())) { // 如果是服务连不上，则同样需要保持到数据库上
+				changeJobRes(scheduleJob, -100, "http请求时报错,请检查omsWeb启动是否正常。");
+			}
+			if ("请求超时：".equals(e.getMessage())) { // 如果是请求超时，则同样需要保持到数据库上
+				changeJobRes(scheduleJob, -100, "http请求超时,请在网页上手动更新该接口。");
+			}
+
+			channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
+			// throw new Exception(e);
 		}
 
 	}
 
 	// 4.3版本不设置超时的话，一旦服务器没有响应，等待时间N久(>24小时)。
-	private void executeRemoteJob(ScheduleJob scheduleJob) {
+	private void executeRemoteJob(ScheduleJob scheduleJob) throws Exception {
 		String taskUrl = scheduleJob.getTaskUrl();
-		CloseableHttpClient httpclient = HttpClients.createDefault();
-		HttpGet httpGet = new HttpGet(taskUrl);
-		RequestConfig requestConfig = RequestConfig.custom()
-				.setConnectTimeout(60000)
-				.setConnectionRequestTimeout(9000)
-				.setSocketTimeout(60000).build(); // 设置请求和传输超时时间
-		httpGet.setConfig(requestConfig);
-		CloseableHttpResponse response = null;
 		try {
-			response = httpclient.execute(httpGet);
+			CloseableHttpClient httpclient = HttpClients.createDefault();
+			HttpGet httpGet = new HttpGet(taskUrl);
+			RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(180000)
+					.setConnectionRequestTimeout(9000).setSocketTimeout(180000).build();
+			// RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(1800)
+			// .setConnectionRequestTimeout(9000).setSocketTimeout(1800).build();
+			// 设置请求和传输超时时间
+			httpGet.setConfig(requestConfig);
+			CloseableHttpResponse response = httpclient.execute(httpGet);
+
 			if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 				String result = EntityUtils.toString(response.getEntity());// 返回json格式：
 				@SuppressWarnings("rawtypes")
 				ResultModel resultModel = JSONObject.parseObject(result, ResultModel.class);
 				changeJobRes(scheduleJob, resultModel.getResult_code(), resultModel.getMessage());
+				// System.out.println(" sc_ok 情况下 ");
 			} else {
 				changeJobRes(scheduleJob, null, null);
+				System.out.println(" sc_ok 不 情况下 ");
 			}
-		} catch (IOException e) {
+		} catch (ConnectException e) {
+			LOG.error("连接不上：{}", e.getMessage());
+			throw new Exception("连接不上：", e);
+		} catch (SocketTimeoutException e) {
+			LOG.error("请求超时：{}", e.getMessage());
+			throw new Exception("请求超时：", e);
+		} catch (Exception e) {
 			LOG.error("请求报错：{}", e.getMessage());
+			throw new Exception("http请求时报错：", e);
 		}
 	}
 
 	private void changeJobRes(ScheduleJob scheduleJob, Integer resultCode, String message) {
-		// scheduleJob.setGmtModify(new Date()); // 最后修改时间不对
 		scheduleJob.setLastExcutionResult(message);
 		scheduleJob.setLastExcutionStatus(resultCode);
+		scheduleJob.setModifiedUser("jobPlatform");
 		scheduleJobService.changeJobRes(scheduleJob);
 	}
-
-	/*
-	 * StringBuilder sb = new StringBuilder();
-	 * sb.append("UPDATE SCHEDULE_JOB sjb ").
-	 * append("SET sjb.last_excution_time = NOW(), ")
-	 * .append("sjb.last_excution_status = " + resultCode + ", ")
-	 * .append("sjb.last_excution_result = '" + message + "' ").append("WHERE ")
-	 * .append("sjb.task_url = '" + taskUrl + "'");
-	 * 
-	 * // 执行成功了则不必要再记错误日志了，【调用方没返回logCode】 if (resultCode != 0) { String logCode =
-	 * message.split("_")[1]; LOG.info("{} :: 更新 sql语句 :: {}", logCode,
-	 * sb.toString()); }
-	 * 
-	 * JDBCUtil.executeUpdate(sb.toString());
-	 */
 }
