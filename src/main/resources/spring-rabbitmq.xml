@@ -16,22 +16,27 @@
 	<rabbit:admin connection-factory="connectionFactory"  id="rabbitConnectionAdmin"/>
 	<!-- 指定名称为 timingTasks_queue 的列队 -->	
 	<!-- 正常配置 -->
-	<rabbit:queue id="timingTasks_Q" name="timingTasks_Q" durable="true" exclusive="false" auto-delete="false" declared-by="rabbitConnectionAdmin"/>
+	<rabbit:queue id="timingTasks_Q" name="timingTasks_Q" durable="true" exclusive="false" auto-delete="false" declared-by="rabbitConnectionAdmin">
+		<rabbit:queue-arguments>
+            <entry key="x-dead-letter-exchange" value="timingTasks_X_DEAD"/>
+            <entry key="x-dead-letter-routing-key" value="timingTasks_R"/>
+            <entry key="x-message-ttl">
+				<value  type="java.lang.Long">180000</value>
+			</entry>
+        </rabbit:queue-arguments>
+	</rabbit:queue>
     <rabbit:direct-exchange id="timingTasks_X" name="timingTasks_X" durable="true" auto-delete="false" declared-by="rabbitConnectionAdmin" >
         <rabbit:bindings>  
             <rabbit:binding queue="timingTasks_Q" key="timingTasks_R"/>  
         </rabbit:bindings>  
     </rabbit:direct-exchange>  
     <!--死信配置  -->
-    <rabbit:queue id="timingTasks_Q_DEAD" durable="true" auto-delete="false" exclusive="false" name="timingTasks_Q_DEAD" declared-by="rabbitConnectionAdmin" >
-		<rabbit:queue-arguments>
-            <entry key="x-dead-letter-exchange" value="timingTasks_X"/>
-            <entry key="x-dead-letter-routing-key" value="timingTasks_R"/>
-            <entry key="x-message-ttl">
-				<value  type="java.lang.Long">600</value>
-			</entry>
-        </rabbit:queue-arguments>
-	</rabbit:queue>
+    <rabbit:queue id="timingTasks_Q_DEAD" durable="true" auto-delete="false" exclusive="false" name="timingTasks_Q_DEAD" declared-by="rabbitConnectionAdmin" />
+    <rabbit:direct-exchange id="timingTasks_X_DEAD" name="timingTasks_X_DEAD" durable="true" auto-delete="false" declared-by="rabbitConnectionAdmin" >
+        <rabbit:bindings>  
+            <rabbit:binding queue="timingTasks_Q_DEAD" key="timingTasks_R"/>  
+        </rabbit:bindings>  
+    </rabbit:direct-exchange>  
 	
 	<!-- spring amqp默认的是jackson 的一个插件,目的将生产者生产的数据转换为json存入消息队列，由于Gson的速度快于jackson,这里替换为Gson的一个实现 -->  
     <bean id="jsonMessageConverter" class="com.jacliu.test.rabbitmq.core.Gson2JsonMessageConverter" />  

@@ -321,10 +321,11 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 		String hostName = getHostName(scheduleJob.getTaskUrl());
 		String interfaceName = getInterfaceName(scheduleJob.getTaskUrl());
 		String companyCode = scheduleJob.getCompanyCode();
-		// String key = "SESSION:" + companyCode + ":FETCHCLIENTELEDATA_UPDATAMARK";
+		String hashKey = new StringBuilder().append("SESSION:").append(interfaceName).append("_UPDATEMARK").toString();
 		String key = new StringBuilder().append("SESSION:").append(companyCode).append(":").append(interfaceName)
-				.append("_UPDATAMARK").toString();
-		String hashKey = new StringBuilder().append("SESSION:").append(interfaceName).append("_UPDATAMARK").toString();
+				.append("_UPDATEMARK").toString();
+
+		LOG.error("companyCode:: {} hostName:: {} key:: {} hashKey:: {} ", companyCode, hostName, key, hashKey);
 
 		String lastRealExcutionTime = "";
 		if ("192.168.8.33:8081".equals(hostName)) {

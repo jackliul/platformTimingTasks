@@ -57,7 +57,7 @@ public class TimingTasksListener implements ChannelAwareMessageListener {
 			}
 
 			channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
-			// throw new Exception(e);
+			throw new Exception(e);
 		}
 
 	}
