@@ -304,14 +304,12 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 				.append("sjb.last_excution_result = '" + scheduleJob.getLastExcutionResult() + "' ").append("WHERE ")
 				.append("sjb.task_url = '" + scheduleJob.getTaskUrl() + "'");
 
-		// System.out.println("updateSql " + sb.toString());
 		LOG.info("updateSql :: {} ", sb.toString());
 		// 执行成功了则不必要再记错误日志了，【调用方没返回logCode】
 		// -100 手动加的是请求不了服务器时的状态码
 		if (scheduleJob.getLastExcutionStatus() != 0 && scheduleJob.getLastExcutionStatus() != -100) {
 			String logCode = scheduleJob.getLastExcutionResult().split("_")[1];
 			LOG.info("{} :: 更新 sql语句 :: {}", logCode, sb.toString());
-			System.out.println("logCode, " + logCode);
 		}
 
 		jdbcDao.updateForSql(sb.toString());
@@ -325,7 +323,7 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 		String key = new StringBuilder().append("SESSION:").append(companyCode).append(":").append(interfaceName)
 				.append("_UPDATEMARK").toString();
 
-		LOG.error("companyCode:: {} hostName:: {} key:: {} hashKey:: {} ", companyCode, hostName, key, hashKey);
+		LOG.info("companyCode:: {} hostName:: {} key:: {} hashKey:: {} ", companyCode, hostName, key, hashKey);
 
 		String lastRealExcutionTime = "";
 		if ("192.168.8.33:8081".equals(hostName)) {

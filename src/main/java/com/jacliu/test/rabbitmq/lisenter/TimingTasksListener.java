@@ -87,13 +87,13 @@ public class TimingTasksListener implements ChannelAwareMessageListener {
 				System.out.println(" sc_ok 不 情况下 ");
 			}
 		} catch (ConnectException e) {
-			LOG.error("连接不上：{}", e.getMessage());
+			LOG.error("连接不上：{}", e);
 			throw new Exception("连接不上：", e);
 		} catch (SocketTimeoutException e) {
-			LOG.error("请求超时：{}", e.getMessage());
+			LOG.error("请求超时：{}", e);
 			throw new Exception("请求超时：", e);
 		} catch (Exception e) {
-			LOG.error("请求报错：{}", e.getMessage());
+			LOG.error("请求报错：{}", e);
 			throw new Exception("http请求时报错：", e);
 		}
 	}
