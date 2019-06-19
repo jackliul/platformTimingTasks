@@ -40,6 +40,9 @@ public class ScheduleJob extends Pageable {
 	// 上次执行时间
 	private Date lastExcutionTime;
 
+	// 执行错误时间【默认为空，只要有错误了就更新时间，以后再次发生错误不再更新，保留最远的错误时间】
+	private Date lastExcutionErrTime;
+
 	// 是否启用 0：未启用；1：已启用
 	private Integer isActived;
 
@@ -260,6 +263,14 @@ public class ScheduleJob extends Pageable {
 
 	public void setEnv(String env) {
 		this.env = env;
+	}
+
+	public Date getLastExcutionErrTime() {
+		return lastExcutionErrTime;
+	}
+
+	public void setLastExcutionErrTime(Date lastExcutionErrTime) {
+		this.lastExcutionErrTime = lastExcutionErrTime;
 	}
 
 	@Override

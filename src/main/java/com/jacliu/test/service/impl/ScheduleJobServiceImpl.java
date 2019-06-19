@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -23,9 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dexcoder.commons.bean.BeanConverter;
 import com.dexcoder.dal.JdbcDao;
 import com.dexcoder.dal.build.Criteria;
+import com.jacliu.test.model.SFaultJobs;
 import com.jacliu.test.model.ScheduleJob;
+import com.jacliu.test.model.ScheduleJobForTasks;
 import com.jacliu.test.redis.service.RedisService;
 import com.jacliu.test.service.ScheduleJobService;
+import com.jacliu.test.utils.DateUtils;
 import com.jacliu.test.utils.ScheduleUtils;
 import com.jacliu.test.vo.ScheduleJobVo;
 
@@ -79,6 +83,9 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 
 	@Transactional(rollbackFor = Exception.class)
 	public Long insert(ScheduleJobVo scheduleJobVo) {
+		scheduleJobVo.setTaskUrl(StringUtils.trim(scheduleJobVo.getTaskUrl()));
+		scheduleJobVo.setCompanyCode(StringUtils.trim(scheduleJobVo.getCompanyCode()));
+		scheduleJobVo.setCronExpression(StringUtils.trim(scheduleJobVo.getCronExpression()));
 		ScheduleJob scheduleJob = scheduleJobVo.getTargetObject(ScheduleJob.class);
 		ScheduleUtils.createScheduleJob(scheduler, scheduleJob);
 		return jdbcDao.insert(scheduleJob);
@@ -176,13 +183,15 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 	 * 
 	 * @return
 	 */
-	public List<ScheduleJobVo> queryExecutingJobList() {
+	public List<ScheduleJobVo> queryExecutingJobList(String companyNo) {
 		try {
 			// 存放结果集
 			List<ScheduleJobVo> jobList = new ArrayList<ScheduleJobVo>();
 
 			// 获取scheduler中的JobGroupName
 			for (String group : scheduler.getJobGroupNames()) {
+				if (!group.contains(companyNo))
+					continue;
 				// 获取JobKey 循环遍历JobKey
 				for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.<JobKey>groupEquals(group))) {
 					JobDetail jobDetail = scheduler.getJobDetail(jobKey);
@@ -295,6 +304,9 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 	public void changeJobRes(ScheduleJob scheduleJob) {
 
 		String lastRealExcutionTime = getLastRealExcutionTime(scheduleJob);
+		if (lastRealExcutionTime.contains("T")) {
+			lastRealExcutionTime = lastRealExcutionTime.replace("T", " ");
+		}
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("UPDATE SCHEDULE_JOB sjb ").append("SET sjb.last_excution_time = NOW(), ")
@@ -305,24 +317,46 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 				.append("sjb.task_url = '" + scheduleJob.getTaskUrl() + "'");
 
 		LOG.info("updateSql :: {} ", sb.toString());
+		jdbcDao.updateForSql(sb.toString());
+
 		// 执行成功了则不必要再记错误日志了，【调用方没返回logCode】
 		// -100 手动加的是请求不了服务器时的状态码
 		if (scheduleJob.getLastExcutionStatus() != 0 && scheduleJob.getLastExcutionStatus() != -100) {
-			String logCode = scheduleJob.getLastExcutionResult().split("_")[1];
-			LOG.info("{} :: 更新 sql语句 :: {}", logCode, sb.toString());
+			String lastExcutionResult = scheduleJob.getLastExcutionResult();
+			if (lastExcutionResult.contains("_")) {
+				String logCode = lastExcutionResult.split("_")[1];
+				LOG.info("{} :: 更新 sql语句 :: {}", logCode, sb.toString());
+			}
+
+			StringBuilder findScheduleJobSql = new StringBuilder();
+			findScheduleJobSql.append("SELECT task_url,company_code,last_excution_err_time FROM SCHEDULE_JOB sjb ")
+					.append("WHERE ").append("sjb.task_url = '" + scheduleJob.getTaskUrl() + "'");
+			List<ScheduleJobForTasks> dbScheduleJobForTasks = jdbcDao.queryListForSql(findScheduleJobSql.toString(),
+					ScheduleJobForTasks.class);
+			// 执行错误时间【默认为空，只要有错误了就更新时间，以后再次发生错误不再更新，保留最远的错误时间】
+			if (dbScheduleJobForTasks.size() != 0 && dbScheduleJobForTasks.get(0).getLastExcutionErrTime() == null) {
+				StringBuilder updateErrtimeSql = new StringBuilder();
+				updateErrtimeSql.append("UPDATE SCHEDULE_JOB sjb ").append("SET sjb.last_excution_err_time = NOW()")
+						.append("WHERE ").append("sjb.task_url = '" + scheduleJob.getTaskUrl() + "'");
+
+				jdbcDao.updateForSql(updateErrtimeSql.toString());
+			}
 		}
 
-		jdbcDao.updateForSql(sb.toString());
 	}
 
-	private String getLastRealExcutionTime(ScheduleJob scheduleJob) {
+	public String getLastRealExcutionTime(ScheduleJob scheduleJob) {
 		String hostName = getHostName(scheduleJob.getTaskUrl());
 		String interfaceName = getInterfaceName(scheduleJob.getTaskUrl());
 		String companyCode = scheduleJob.getCompanyCode();
-		String hashKey = new StringBuilder().append("SESSION:").append(interfaceName).append("_UPDATEMARK").toString();
-		String key = new StringBuilder().append("SESSION:").append(companyCode).append(":").append(interfaceName)
-				.append("_UPDATEMARK").toString();
+		// String key = new
+		// StringBuilder().append("SESSION:").append(interfaceName).append("_UPDATEMARK").toString();
+		// String hashKey = new
+		// StringBuilder().append("SESSION:").append(companyCode).append(":").append(interfaceName)
+		// .append("_UPDATEMARK").toString();
 
+		String key = "UPDATE_AND_PUSH:" + scheduleJob.getCompanyCode().toUpperCase();
+		String hashKey = interfaceName;
 		LOG.info("companyCode:: {} hostName:: {} key:: {} hashKey:: {} ", companyCode, hostName, key, hashKey);
 
 		String lastRealExcutionTime = "";
@@ -336,6 +370,11 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 			lastRealExcutionTime = intelinkRedisService.hget(key, hashKey);
 		}
 
+		// 测试用
+		if ("localhost:9089".equals(hostName)) {
+			lastRealExcutionTime = developOrTestRedisService.hget(key, hashKey);
+		}
+
 		return lastRealExcutionTime;
 	}
 
@@ -343,7 +382,8 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 		String[] split = taskUrl.split("//");
 		String[] split2 = split[1].split("/");
 		String interfaceName = split2[2];
-		return interfaceName.toUpperCase();
+		// return interfaceName.toUpperCase();
+		return interfaceName;
 	}
 
 	private String getHostName(String taskUrl) {
@@ -355,5 +395,77 @@ public class ScheduleJobServiceImpl implements ScheduleJobService {
 		// System.out.println(split2[0]);
 		String hostName = split2[0];
 		return hostName;
+	}
+
+	@Transactional(rollbackFor = Exception.class)
+	public void batchInseatFaults(List<ScheduleJobForTasks> scheduleJobs) {
+		for (ScheduleJobForTasks scheduleJob : scheduleJobs) {
+			SFaultJobs faultJobs = new SFaultJobs();
+			faultJobs.setCompanyNo(scheduleJob.getCompanyCode());
+			faultJobs.setTaskUrl(scheduleJob.getTaskUrl());
+			faultJobs.setEnv(scheduleJob.getEnv());
+			// 先删掉已存在的错误记录 根据 env + companyNo + taskUrl
+			String refSql = "SELECT\r\n" + "	COMPANY_NO,\r\n" + "	ENV,\r\n" + "	FAULT_EXCUTION_TIME,\r\n"
+					+ "	FAULT_RESULT,\r\n" + "	GMT_CREATE,\r\n" + "	ID,\r\n" + "	SPACE_TIME,\r\n"
+					+ "	TASK_URL\r\n" + "FROM\r\n" + "	S_FAULT_JOBS\r\n" + "WHERE\r\n" + "	COMPANY_NO = '"
+					+ scheduleJob.getCompanyCode() + "'\r\n" + "AND ENV = '" + scheduleJob.getEnv() + "'\r\n"
+					+ "AND TASK_URL = '" + scheduleJob.getTaskUrl() + "'\r\n" + "ORDER BY\r\n" + "	ID DESC";
+
+			List<SFaultJobs> dbSfaultJobList = jdbcDao.queryListForSql(refSql, SFaultJobs.class);
+			if (null != dbSfaultJobList && dbSfaultJobList.size() > 0) {
+				jdbcDao.delete(dbSfaultJobList.get(0));
+			}
+			// 再新增本次的
+			faultJobs.setGmtCreate(new Date());
+			Date lastExcutionErrTime = scheduleJob.getLastExcutionErrTime();
+			String timeStr = DateUtils.getTimeStr(lastExcutionErrTime);
+			faultJobs.setFaultExcutionTime(timeStr);
+			long spaceMinutis = DateUtils.getTime(lastExcutionErrTime, null);
+			faultJobs.setSpaceTime(spaceMinutis + "");
+			faultJobs.setFaultResult(scheduleJob.getLastExcutionResult());
+			jdbcDao.insert(faultJobs);
+		}
+	}
+
+	public List<ScheduleJobForTasks> findAll() {
+		String refSql = "SELECT\r\n" + "	SCHEDULE_JOB.schedule_job_id,\r\n" + "	SCHEDULE_JOB.env,\r\n"
+				+ "	SCHEDULE_JOB.task_url,\r\n" + "	SCHEDULE_JOB.company_code,\r\n"
+				+ "	SCHEDULE_JOB.cron_expression,\r\n" + "	SCHEDULE_JOB.last_excution_status,\r\n"
+				+ "	SCHEDULE_JOB.last_excution_result,\r\n" + "	SCHEDULE_JOB.last_real_excution_time,\r\n"
+				+ "	SCHEDULE_JOB.last_excution_err_time,\r\n" + "	SCHEDULE_JOB.last_excution_time,\r\n"
+				+ "	SCHEDULE_JOB.is_actived,\r\n" + "	SCHEDULE_JOB.is_delete,\r\n"
+				+ "	SCHEDULE_JOB.functional_name,\r\n" + "	SCHEDULE_JOB.functional_type,\r\n"
+				+ "	SCHEDULE_JOB.create_user,\r\n" + "	SCHEDULE_JOB.modified_user,\r\n"
+				+ "	SCHEDULE_JOB.description,\r\n" + "	SCHEDULE_JOB.gmt_create,\r\n"
+				+ "	SCHEDULE_JOB.gmt_modify,\r\n" + "	SCHEDULE_JOB.run_status,\r\n" + "	SCHEDULE_JOB.job_name,\r\n"
+				+ "	SCHEDULE_JOB.job_group,\r\n" + "	SCHEDULE_JOB.job_trigger\r\n" + "FROM\r\n"
+				+ "	SCHEDULE_JOB\r\n" + "WHERE\r\n" + "	is_delete = 0";
+		List<ScheduleJobForTasks> scheduleJobs = jdbcDao.queryListForSql(refSql, new Object[] {},
+				ScheduleJobForTasks.class);
+		return scheduleJobs;
+
+		/*
+		 * List<ScheduleJobVo> scheduleJobVos = new ArrayList<ScheduleJobVo>(); for
+		 * (ScheduleJob scheduleJob : scheduleJobs) { ScheduleJobVo scheduleJobVo = new
+		 * ScheduleJobVo(); BeanUtils.copyProperties(scheduleJob, scheduleJobVo, new
+		 * String[] {}); scheduleJobVos.add(scheduleJobVo); } return scheduleJobVos;
+		 */
+	}
+
+	public List<SFaultJobs> findAllFaultsJobs() {
+		String refSql = "SELECT * FROM S_FAULT_JOBS";
+		List<SFaultJobs> dFfaultJobs = jdbcDao.queryListForSql(refSql, new Object[] {}, SFaultJobs.class);
+		return dFfaultJobs;
+	}
+
+	public void delFaultJobsRecord(String taskUrl) {
+		String refSql = "DELETE FROM S_FAULT_JOBS WHERE task_url = '" + taskUrl + "'";
+		jdbcDao.updateForSql(refSql);
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("UPDATE `SCHEDULE_JOB` SET last_excution_err_time = NULL,last_excution_status = 0 WHERE task_url = '")
+				.append(taskUrl).append("'");
+		jdbcDao.updateForSql(sb.toString());
+
 	}
 }

@@ -9,8 +9,9 @@
         <td>是否启用</td>
         <td>是否异步</td>
         <td>任务执行url</td>
-        <td>上次更新成功时间</td>
-        <td>上次执行时间</td>
+        <td>tms最近修改时间</td>
+        <td>任务上次执行时间</td>
+        <td>执行错误时间</td>
         <td>上次执行状态</td>
         <td>失败原因</td>
         <td>操作</td>
@@ -50,6 +51,7 @@
             <td>$!{item.taskUrl}</td>
             <td>$!item.lastRealExcutionTime</td>
             <td>$!dateTool.format('yyyy-MM-dd HH:mm:ss', $!item.lastExcutionTime)</td>
+             <td>$!dateTool.format('yyyy-MM-dd HH:mm:ss', $!item.lastExcutionErrTime)</td>
             <td>
 	            #if ($!{item.lastExcutionStatus}==0)
 	             	 成功
@@ -77,7 +79,7 @@
                  -->
                     
                 <a class="btn btn-danger" role="button"
-                   href="inputScheduleJob.shtml?scheduleJobId=$!{item.scheduleJobId}"><i class="fa fa-pencil" aria-hidden="true"></i>修改</a>
+                   href="inputScheduleJob.shtml?scheduleJobId=$!{item.scheduleJobId}&companyNo=$!{companyNo}"><i class="fa fa-pencil" aria-hidden="true"></i>修改</a>
                 <a class="btn btn-danger" role="button"
                    href="deleteScheduleJob.shtml?scheduleJobId=$!{item.scheduleJobId}"><i class="fa fa-trash" aria-hidden="true"></i>删除</a>
             </td>

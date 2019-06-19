@@ -37,27 +37,29 @@ public class TimingTasksListener implements ChannelAwareMessageListener {
 		ScheduleJob scheduleJob = null;
 		try {
 			String data = new String(message.getBody());
+			LOG.info("consumer received message: {} ", data);
 			if (StringUtils.isBlank(data)) {
-				channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+				// channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
 				return;
 			}
 
-			LOG.info("consumer received message: {} ", data);
 			scheduleJob = JSON.parseObject(data, ScheduleJob.class);
 
 			executeRemoteJob(scheduleJob);
+			// 告诉服务器收到这条消息 已经被我消费了 可以在队列删掉 这样以后就不会再发了 否则消息服务器以为这条消息没处理掉 后续还会在发
 			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
 		} catch (Exception e) {
-			LOG.error("发送时错误", e.getMessage());
-			if ("连接不上：".equals(e.getMessage())) { // 如果是服务连不上，则同样需要保持到数据库上
-				changeJobRes(scheduleJob, -100, "http请求时报错,请检查omsWeb启动是否正常。");
-			}
-			if ("请求超时：".equals(e.getMessage())) { // 如果是请求超时，则同样需要保持到数据库上
-				changeJobRes(scheduleJob, -100, "http请求超时,请在网页上手动更新该接口。");
-			}
+			/*
+			 * LOG.error("发送时错误", e.getMessage()); if ("连接不上：".equals(e.getMessage())) { //
+			 * 如果是服务连不上，则同样需要保持到数据库上 changeJobRes(scheduleJob, -100,
+			 * "http请求时报错,请检查omsWeb启动是否正常。"); } if ("请求超时：".equals(e.getMessage())) { //
+			 * 如果是请求超时，则同样需要保持到数据库上 changeJobRes(scheduleJob, -100,
+			 * "http请求超时,请在网页上手动更新该接口。"); }
+			 */
 
+			// 丢弃这条消息
 			channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
-			throw new Exception(e);
+			// throw new Exception(e);
 		}
 
 	}
@@ -67,9 +69,9 @@ public class TimingTasksListener implements ChannelAwareMessageListener {
 		String taskUrl = scheduleJob.getTaskUrl();
 		try {
 			CloseableHttpClient httpclient = HttpClients.createDefault();
-			HttpGet httpGet = new HttpGet(taskUrl);
-			RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(180000)
-					.setConnectionRequestTimeout(9000).setSocketTimeout(180000).build();
+			HttpGet httpGet = new HttpGet(taskUrl); // 1800000
+			RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(360000)
+					.setConnectionRequestTimeout(9000).setSocketTimeout(360000).build();
 			// RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(1800)
 			// .setConnectionRequestTimeout(9000).setSocketTimeout(1800).build();
 			// 设置请求和传输超时时间
@@ -81,20 +83,23 @@ public class TimingTasksListener implements ChannelAwareMessageListener {
 				@SuppressWarnings("rawtypes")
 				ResultModel resultModel = JSONObject.parseObject(result, ResultModel.class);
 				changeJobRes(scheduleJob, resultModel.getResult_code(), resultModel.getMessage());
-				// System.out.println(" sc_ok 情况下 ");
 			} else {
-				changeJobRes(scheduleJob, null, null);
-				System.out.println(" sc_ok 不 情况下 ");
+				changeJobRes(scheduleJob, -200, "HttpStatus.SC_OK 不就ok的情況");
 			}
 		} catch (ConnectException e) {
 			LOG.error("连接不上：{}", e);
+			changeJobRes(scheduleJob, -300, "http请求时报错,请检查omsJobs启动是否正常。");
 			throw new Exception("连接不上：", e);
 		} catch (SocketTimeoutException e) {
 			LOG.error("请求超时：{}", e);
+			changeJobRes(scheduleJob, -400, "http请求超时,请在网页上手动更新该接口。");
 			throw new Exception("请求超时：", e);
 		} catch (Exception e) {
+			changeJobRes(scheduleJob, -500, "http请求时报错：");
 			LOG.error("请求报错：{}", e);
 			throw new Exception("http请求时报错：", e);
+		} finally {
+
 		}
 	}
 

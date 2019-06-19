@@ -7,7 +7,6 @@ import org.quartz.JobExecutionException;
 import org.quartz.PersistJobDataAfterExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
@@ -43,7 +42,7 @@ public class SyncJobFactory extends QuartzJobBean {
 		messageProperties.setContentType("application/json");
 		Message message = new Message(scheduleJobStr.getBytes(), messageProperties);
 
-//		LOG.info("发送消息 messages ,,, ：{}", scheduleJobStr);
+		// LOG.info("发送消息 messages ,,, ：{}", scheduleJobStr);
 		try {
 			amqpTemplate.convertAndSend("timingTasks_X", "timingTasks_R", message);
 		} catch (Exception e) {

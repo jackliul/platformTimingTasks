@@ -62,7 +62,6 @@ public class ScheduleJobExternalController {
 				scheduleJobService.externalUpdate(scheduleJobVo);
 			}
 		} catch (Exception e) {
-			LOG.error("承运商新增错误：{}", e.getMessage());
 			LOG.error("错误 bean：{}", scheduleJobVo.toString());
 			result = "0";
 		}

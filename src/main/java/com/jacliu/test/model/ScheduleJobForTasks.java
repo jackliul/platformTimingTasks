@@ -1,4 +1,4 @@
-package com.jacliu.test.vo;
+package com.jacliu.test.model;
 
 import java.util.Date;
 
@@ -8,14 +8,12 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.dexcoder.commons.pager.Pageable;
 
 /**
- * author : jacliu createTime : 2018-06-28 description : 定时任务模型Vo version : 1.0
+ * author : jacliu createTime : 2018-06-28 description : 默认只能生成 boolean 类型的
+ * isActive isDelete
  */
-public class ScheduleJobVo extends Pageable {
+public class ScheduleJobForTasks extends Pageable {
 
-	private static final long serialVersionUID = -4216107640768329946L;
-
-	/** 任务调度的参数key */
-	public static final String JOB_PARAM_KEY = "jobParam";
+	private static final long serialVersionUID = 4888005949821878223L;
 
 	private Long scheduleJobId;
 
@@ -23,13 +21,10 @@ public class ScheduleJobVo extends Pageable {
 	private String taskUrl;
 
 	// 环境
-	private String env = "platform";
+	private String env;
 
 	// 公司编号
 	private String companyCode;
-
-	// 该任务运行状态
-	private String runStatus;
 
 	// 该任务执行的cron表达式：如每隔5分钟：0 0/5 * * * ?
 	private String cronExpression;
@@ -50,10 +45,10 @@ public class ScheduleJobVo extends Pageable {
 	private Date lastExcutionTime;
 
 	// 是否启用 0：未启用；1：已启用
-	private Integer isActived;
+	private Boolean isActived;
 
 	// 是否删除：0：未删除；1：已删除
-	private int isDelete = 0;
+	private Boolean isDelete;
 
 	// 该任务执行的功能名称
 	private String functionalName;
@@ -84,12 +79,11 @@ public class ScheduleJobVo extends Pageable {
 
 	private Boolean isSync;
 
+	// 该任务运行状态
+	private String runStatus;
+
 	public Long getScheduleJobId() {
 		return this.scheduleJobId;
-	}
-
-	public void setScheduleJobId(Long scheduleJobId) {
-		this.scheduleJobId = scheduleJobId;
 	}
 
 	public String getTaskUrl() {
@@ -117,7 +111,7 @@ public class ScheduleJobVo extends Pageable {
 	}
 
 	public Integer getLastExcutionStatus() {
-		return lastExcutionStatus;
+		return this.lastExcutionStatus;
 	}
 
 	public void setLastExcutionStatus(Integer lastExcutionStatus) {
@@ -140,19 +134,19 @@ public class ScheduleJobVo extends Pageable {
 		this.lastExcutionTime = lastExcutionTime;
 	}
 
-	public Integer getIsActived() {
+	public Boolean getIsActived() {
 		return isActived;
 	}
 
-	public void setIsActived(Integer isActived) {
+	public void setIsActived(Boolean isActived) {
 		this.isActived = isActived;
 	}
 
-	public int getIsDelete() {
-		return this.isDelete;
+	public Boolean getIsDelete() {
+		return isDelete;
 	}
 
-	public void setIsDelete(int isDelete) {
+	public void setIsDelete(Boolean isDelete) {
 		this.isDelete = isDelete;
 	}
 
@@ -212,6 +206,14 @@ public class ScheduleJobVo extends Pageable {
 		this.gmtModify = gmtModify;
 	}
 
+	public String getLastRealExcutionTime() {
+		return lastRealExcutionTime;
+	}
+
+	public void setLastRealExcutionTime(String lastRealExcutionTime) {
+		this.lastRealExcutionTime = lastRealExcutionTime;
+	}
+
 	public String getJobName() {
 		return this.jobName;
 	}
@@ -244,20 +246,16 @@ public class ScheduleJobVo extends Pageable {
 		this.runStatus = runStatus;
 	}
 
+	public void setScheduleJobId(Long scheduleJobId) {
+		this.scheduleJobId = scheduleJobId;
+	}
+
 	public Boolean getIsSync() {
 		return isSync;
 	}
 
 	public void setIsSync(Boolean isSync) {
 		this.isSync = isSync;
-	}
-
-	public String getLastRealExcutionTime() {
-		return lastRealExcutionTime;
-	}
-
-	public void setLastRealExcutionTime(String lastRealExcutionTime) {
-		this.lastRealExcutionTime = lastRealExcutionTime;
 	}
 
 	public String getEnv() {

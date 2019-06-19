@@ -2,7 +2,9 @@ package com.jacliu.test.service;
 
 import java.util.List;
 
+import com.jacliu.test.model.SFaultJobs;
 import com.jacliu.test.model.ScheduleJob;
+import com.jacliu.test.model.ScheduleJobForTasks;
 import com.jacliu.test.vo.ScheduleJobVo;
 
 /**
@@ -89,10 +91,12 @@ public interface ScheduleJobService {
 
 	/**
 	 * 获取运行中的任务列表
+	 * 
+	 * @param companyNo
 	 *
 	 * @return
 	 */
-	public List<ScheduleJobVo> queryExecutingJobList() throws Exception;
+	public List<ScheduleJobVo> queryExecutingJobList(String companyNo) throws Exception;
 
 	/**
 	 * 删除任务
@@ -128,5 +132,31 @@ public interface ScheduleJobService {
 	 * @param scheduleJobVo
 	 */
 	public void changeJobRes(ScheduleJob scheduleJob);
+
+	/**
+	 * 批量添加失败的任务
+	 * 
+	 * @param scheduleJobVo
+	 */
+	public void batchInseatFaults(List<ScheduleJobForTasks> faultJobs);
+
+	/**
+	 * 查找所有的已存在的定时任务列表
+	 * 
+	 * @return
+	 */
+	public List<ScheduleJobForTasks> findAll();
+
+	/**
+	 * 查找所有失败的定时任务
+	 * 
+	 * @return
+	 */
+	public List<SFaultJobs> findAllFaultsJobs();
+
+	/**
+	 * 1：删除添加的错误记录 S_FAULT_JOBS 2：更改 SCHEDULE_JOB中的最后错误时间为null
+	 */
+	public void delFaultJobsRecord(String taskUrl);
 
 }

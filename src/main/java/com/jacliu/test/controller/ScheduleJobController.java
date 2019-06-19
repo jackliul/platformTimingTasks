@@ -3,6 +3,8 @@ package com.jacliu.test.controller;
 import java.util.Date;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +35,8 @@ public class ScheduleJobController {
 	 * @return
 	 */
 	@RequestMapping(value = "inputScheduleJob", method = RequestMethod.GET)
-	public String inputScheduleJob(ScheduleJobVo scheduleJobVo, ModelMap modelMap) {
-
+	public String inputScheduleJob(ScheduleJobVo scheduleJobVo, ModelMap modelMap, HttpServletRequest request) {
+		String companyNo = request.getParameter("companyNo");
 		if (scheduleJobVo.getScheduleJobId() != null) {
 			ScheduleJobVo scheduleJob;
 			try {
@@ -44,9 +46,11 @@ public class ScheduleJobController {
 			} catch (Exception e) {
 				LOG.error("inputScheduJob:: " + e.getMessage());
 			}
-
 		}
 
+		if (StringUtils.isNotEmpty(companyNo)) {
+			modelMap.put("companyNo", companyNo);
+		}
 		return "inputScheduleJob";
 	}
 
@@ -180,10 +184,12 @@ public class ScheduleJobController {
 	 * @return
 	 */
 	@RequestMapping(value = "scheduleJobs", method = RequestMethod.GET)
-	public String scheduleJobs(ScheduleJobVo scheduleJobVo, ModelMap modelMap) {
+	public String scheduleJobs(ScheduleJobVo scheduleJobVo, ModelMap modelMap, HttpServletRequest request) {
 		List<ScheduleJobVo> scheduleJobVoList;
+		String companyNo = request.getParameter("companyNo");
 		try {
 			scheduleJobVo.setEnv(null);
+			scheduleJobVo.setCompanyCode(companyNo);
 			scheduleJobVoList = scheduleJobService.queryList(scheduleJobVo);
 			modelMap.put("scheduleJobVoList", scheduleJobVoList);
 		} catch (Exception e) {
@@ -192,10 +198,14 @@ public class ScheduleJobController {
 
 		List<ScheduleJobVo> executingJobList;
 		try {
-			executingJobList = scheduleJobService.queryExecutingJobList();
+			executingJobList = scheduleJobService.queryExecutingJobList(companyNo);
 			modelMap.put("executingJobList", executingJobList);
 		} catch (Exception e) {
 			LOG.error("scheduleJobs executingJobList :: " + e.getMessage());
+		}
+
+		if (StringUtils.isNotEmpty(companyNo)) {
+			modelMap.put("companyNo", companyNo);
 		}
 		return "scheduleJobs";
 	}
